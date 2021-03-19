@@ -1,26 +1,27 @@
-Using BWA and samtools for alignment 
+Using BWA and Bewtie2 samtools for alignment 
 
 #dowload the reference sequence
-$ wget http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz ./reference
-$ gunzip ./reference/hg38.fa.gz
-#Index the reference sequence
-$ /usr/local/bwa/bwa index -a bwtsw ./reference/hg38.fa
+$ wget http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
+$ gunzip hg38.fa.gz
 
-#Perform a paired end alignment
-$ /usr/local/bwa/bwa aln ./reference/hg38.fa.gz input-F.fastq.gz > output-F.sai
-$ /usr/local/bwa/bwa aln ./reference/hg38.fa.gz input-R.fastq.gz > output-R.sai
+#Building index
+$ bwa index -a bwtsw hg38 hg38.fa
+$ bowtie2-build hg38.fa hg38
 
-#This is a Sequence Alignment/Map format fil
-$ /usr/local/bwa/bwa sampe -r STR ./reference/hg38.fa output-F.sai output-R.sai input-F.fastq.gz input-R.fastq.gz > output.sam
+#Sequence Alignment/Map format fil
+$ bwa mem hg38.fa input-F.fastq input-R.fastq > output.sam
 
 #convert the SAM file to a BAM file
-$ samtools view -bS -o output.bam output.sam
+$ samtools view -S -b -o output.sam > output.bam
 
 #Sort the BAM file by chromosome and position
-$ samtools sort -o output.sorted.bam output.bam
+$ samtools sort output.bam output_sorted.bam
 
-#Indexing a BAM file (output.bai)
-$ samtools index output.sorted.bam
+#Marking possible PCR duplicates
+$ picard MarkDuplicates I=output_sorted.bam O=output_sorted_marked.bam M=picard_info.txt REMOVE_DUPLICATES=true AS=true
+
+#Indexing a BAM file (output_sorted.bam.bai)
+$ samtools index output_sorted.bam
 
 $ freebayes -p 2 -f hg38.fa  output.sorted.bam > output.vcf #-p 2 : for diploid
 $ vcftools --vcf output.vcf --minQ 20 --recode --recode-INFO-all --out output_filted.vcf 
