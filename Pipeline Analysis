@@ -20,4 +20,9 @@ $ samtools view -bS -o output.bam output.sam
 $ samtools sort -o output.sorted.bam output.bam
 
 #Indexing a BAM file (output.bai)
-$ samtools index output.sorted.dedupped.bam
+$ samtools index output.sorted.bam
+
+$ freebayes -p 2 -f hg38.fa  output.sorted.bam > output.vcf #-p 2 : for diploid
+$ vcftools --vcf output.vcf --minQ 20 --recode --recode-INFO-all --out output_filted.vcf 
+
+#and then you can input the output-filted.vcf file to varaft software (free software) fo annotation and fitration
