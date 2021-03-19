@@ -1,0 +1,23 @@
+Using BWA and samtools for alignment 
+
+#dowload the reference sequence
+$ wget http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz ./reference
+$ gunzip ./reference/hg38.fa.gz
+#Index the reference sequence
+$ /usr/local/bwa/bwa index -a bwtsw ./reference/hg38.fa
+
+#Perform a paired end alignment
+$ /usr/local/bwa/bwa aln ./reference/hg38.fa.gz input-F.fastq.gz > output-F.sai
+$ /usr/local/bwa/bwa aln ./reference/hg38.fa.gz input-R.fastq.gz > output-R.sai
+
+#This is a Sequence Alignment/Map format fil
+$ /usr/local/bwa/bwa sampe -r STR ./reference/hg38.fa output-F.sai output-R.sai input-F.fastq.gz input-R.fastq.gz > output.sam
+
+#convert the SAM file to a BAM file
+$ samtools view -bS -o output.bam output.sam
+
+#Sort the BAM file by chromosome and position
+$ samtools sort -o output.sorted.bam output.bam
+
+#Indexing a BAM file (output.bai)
+$ samtools index output.sorted.dedupped.bam
