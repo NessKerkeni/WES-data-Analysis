@@ -23,7 +23,7 @@ $ java -jar picard.jar AddOrReplaceReadGroups --INPUT=input_sorted.bam --OUTPUT=
 $ java -jar picard.jar MarkDuplicates --INPUT=input_readgroup.bam --OUTPUT=output_dedup_reads.bam --METRICS_FILE=metrics.txt -AS=true --VALIDATION_STRINGENCY=LENIENT
 
 #Indexing BAM file (output_dedup_reads.bam.bai)
-$ java -jar picard.jar --INPUT=input_dedup_reads.bam
+$ java -jar picard.jar BuildBamIndex --INPUT=input_dedup_reads.bam
 
 ###Variant Calling
 #Germline variant calling - HaplotypeCaller
