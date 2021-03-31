@@ -1,29 +1,35 @@
-Using BWA and Bewtie2 samtools for alignment 
+###Alignment 
 
-#dowload the reference sequence
+#Dowload the reference sequence
 $ wget http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
 $ gunzip hg38.fa.gz
 
 #Building index
-$ bwa index -a bwtsw hg38 hg38.fa
 $ bowtie2-build hg38.fa hg38
 
 #Sequence Alignment/Map format fil
-$ bwa mem hg38.fa input-F.fastq input-R.fastq > output.sam
+$ bowtie2 -x hg38 -1 input-F.fastq -2 input-R.fastq -U hg38.fa -S output.sam
 
-#convert the SAM file to a BAM file
-$ samtools view -S -b -o output.sam > output.bam
+#Convert the SAM file to a BAM file
+$ java -jar picard.jar SortSam --INPUT=input.sam --OUTPUT=output_sorted.bam --SORT_ORDER=coordinate
 
-#Sort the BAM file by chromosome and position
-$ samtools sort output.bam output_sorted.bam
+#Alignement Symmary
+$ java -jar picard.jar CollectAlignmentSummaryMetrics --REFERENCE_SEQUENCE=hg38.fa --INPUT=input_sorted.bam --OUTPUT=output_alignment_metrics.txt
 
-#Marking possible PCR duplicates
-$ picard MarkDuplicates I=output_sorted.bam O=output_sorted_marked.bam M=picard_info.txt REMOVE_DUPLICATES=true AS=true
+#Insert size information
+$ java -jar picard.jar AddOrReplaceReadGroups --INPUT=input_sorted.bam --OUTPUT=output_readgroup.bam --RGLB=lib1 --RGPL=illumina --RGPU=NONE --RGSM=BG
 
-#Indexing a BAM file (output_sorted.bam.bai)
-$ samtools index output_sorted.bam
+#Marking duplicates
+$ java -jar picard.jar MarkDuplicates --INPUT=input_readgroup.bam --OUTPUT=output_dedup_reads.bam --METRICS_FILE=metrics.txt -AS=true --VALIDATION_STRINGENCY=LENIENT
 
-$ freebayes -p 2 -f hg38.fa  output.sorted.bam > output.vcf #-p 2 : for diploid
-$ vcftools --vcf output.vcf --minQ 20 --recode --recode-INFO-all --out output_filted.vcf 
+#Indexing BAM file (output_dedup_reads.bam.bai)
+$ java -jar picard.jar --INPUT=input_dedup_reads.bam
 
-#and then you can input the output-filted.vcf file to varaft software (free software) fo annotation and fitration
+###Variant Calling
+#Germline variant calling - HaplotypeCaller
+$ gatk HaplotypeCaller -R hg38.fa --input inout_dedup_reads.bam --output output_raw_variants.vcf
+
+#Filter the vcf file
+$ gatk VariantFiltration -R hg38.fa -V output_raw_variants.vcf -O output_raw_variants_filtred.vcf --cluster-window-size 10 --filter-expression "MQ < 40.0" --filter-name "POOR MAPPING QUALITY" --filter-expression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filter-name "HARD_TO_VALIDATE" --filter-expression "DP < 10" --filter-name "LowCoverage" --filter-expression "QUAL < 30.0 " --filter-name "VeryLowQual" --filter-expression "QUAL > 30.0 && QUAL < 50.0 " --filter-name "LowQual" --filter-expression "FS > 40.0" --filter-name "StrandBias" --filter-expression "QD<2.0||FS>60.0||MQ<40.0||HaplotypeScore>13.0||MQRankSum<-12.5||ReadPosRankSum<-8.0" --filter-name "SNP_FILTERS" --filter-expression "QD<2.0||FS>200.0||ReadPosRankSum<-20.0" --filter-name "INDEL_FILTERS"
+
+###and then you can input the output_raw_variants_filtred.vcf file to varaft software (free software) fo annotation and fitration
