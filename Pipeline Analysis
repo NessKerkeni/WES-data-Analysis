@@ -31,5 +31,3 @@ $ gatk HaplotypeCaller -R hg38.fa --input inout_dedup_reads.bam --output output_
 
 #Filter the vcf file
 $ gatk VariantFiltration -R hg38.fa -V output_raw_variants.vcf -O output_raw_variants_filtred.vcf --cluster-window-size 10 --filter-expression "MQ < 40.0" --filter-name "POOR MAPPING QUALITY" --filter-expression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filter-name "HARD_TO_VALIDATE" --filter-expression "DP < 10" --filter-name "LowCoverage" --filter-expression "QUAL < 30.0 " --filter-name "VeryLowQual" --filter-expression "QUAL > 30.0 && QUAL < 50.0 " --filter-name "LowQual" --filter-expression "FS > 40.0" --filter-name "StrandBias" --filter-expression "QD<2.0||FS>60.0||MQ<40.0||HaplotypeScore>13.0||MQRankSum<-12.5||ReadPosRankSum<-8.0" --filter-name "SNP_FILTERS" --filter-expression "QD<2.0||FS>200.0||ReadPosRankSum<-20.0" --filter-name "INDEL_FILTERS"
-
-###and then you can input the output_raw_variants_filtred.vcf file to varaft software (free software) fo annotation and fitration
